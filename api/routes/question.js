@@ -15,9 +15,22 @@ questionRouter.get('/', async (req, res) => {
 });
 
 // GET /api/questions/iddklasdjkad
-questionRouter.get('/:id', (req, res) => {
-  const { id } = req.params;
-  res.send(`Question with id: ${id} requested`);
+questionRouter.get('/:id', async (req, res) => {
+  try {
+    const {id} = req.params;
+
+    const question = await Question.findById(id);
+
+    if (question){
+      res.status(200).send(question);
+    }else{
+      res.status(404).send({message: "question no found"});
+    }
+  } catch (error) {
+    res.status(500).send(error);
+  }
+
+  
 });
 
 questionRouter.post('/', authRequired, async (req, res) => {
@@ -39,14 +52,36 @@ questionRouter.post('/', authRequired, async (req, res) => {
   }
 });
 
-questionRouter.put('/:id', authRequired, (req, res) => {
-  const { id } = req.params;
-  res.send(`Question with id: ${id} updated`);
+questionRouter.put('/:id', authRequired, async (req, res) => {
+  try {
+    const {id} = req.params;
+    const {title,description,icon} = req.body;
+    const newQuestion = {title, description, icon};
+    const question = await Question.findByIdAndUpdate(
+      {_id:id},
+      {$set: newQuestion},
+      {new:true}
+    );
+    if(question){
+      res.status(200).send(question);
+    }else{
+      res.status(404).send({
+        message: "Question not found"
+      });
+    }
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
-questionRouter.delete('/:id', authRequired, (req, res) => {
-  const { id } = req.params;
-  res.send(`Question with id: ${id} deleted`);
+questionRouter.delete('/:id', authRequired, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Question.findByIdAndRemove(id);
+    res.status(200).send(true);
+  } catch (err) {
+    res.status(500).send(err);
+  }
 });
 
 export default questionRouter;
